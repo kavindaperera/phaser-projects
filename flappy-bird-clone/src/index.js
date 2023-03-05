@@ -1,5 +1,8 @@
 import Phaser from "phaser";
 
+// npm run build
+// npm run dev
+
 const config = {
 	// WebGL (Web Graphics Library) JS API for rendering 2D anf 3D graphics
 	type: Phaser.AUTO,
@@ -9,8 +12,8 @@ const config = {
 		// Arcade physics plugin, manages pphysics simulation
 		default: "arcade",
 		arcade: {
+			debug: true,
 			gravity: {
-				y: 200,
 			},
 		},
 	},
@@ -28,34 +31,51 @@ function preload() {
 
 	this.load.image("sky", "./assets/sky.png"); // (key, path)
 	this.load.image("bird", "./assets/bird.png");
+	this.load.image("pipe", "./assets/pipe.png");
 }
+
+const VELOCITY = 200;
+const FLAP_VELOCITY = 250;
+const INIT_POSITION = {x: config.width * 0.1, y: config.height / 2}
 
 let bird = null;
-let timeLapse = 0;
+let upperPipe = null;
+let lowerPipe = null;
 
 function create() {
+
 	// (x, y, key of the image)
 	this.add.image(0, 0, "sky").setOrigin(0, 0);
-	bird = this.physics.add
-		.sprite(config.width * 0.1, config.height / 2, "bird")
-		.setOrigin(0, 0);
-	// bird.body.gravity.y = 200; //pixels per seconds^2
+
+	bird = this.physics.add.sprite(INIT_POSITION.x, INIT_POSITION.y, "bird").setOrigin(0, 0);
+	bird.body.gravity.y = 200; //pixels per seconds^2
+	bird.body.velocity.x = VELOCITY;
+
+	upperPipe = this.physics.add.sprite(400, 100, "pipe").setOrigin(0, 1);		
+	lowerPipe = this.physics.add.sprite(400, upperPipe.y + 100, "pipe").setOrigin(0, 0);	
+	
+	this.input.on('pointerdown', flap);
+	this.input.keyboard.on('keydown_SPACE', flap);
+
 }
 
-// velocity
-// t0 = 0px/s
-// t1 = 200px/s
-// t2 = 400px/s
 
-// 60 fps - 60 times per second
-// 60 * 16ms = 960ms
+// if bird y position is small than 0 or greater than height of the canvas -> alert "You have lost!"
+// 
 function update(time, delta) {
-	timeLapse += delta;
-
-	if (timeLapse >= 1000) {
-		console.log(bird.body.velocity.y);
-		timeLapse = 0;
+	if(bird.y > (config.height - bird.height) || bird.y < 0) {
+		restartPlayerPosition();
 	}
+}
+
+function restartPlayerPosition() {
+	bird.x = INIT_POSITION.x;
+	bird.y = INIT_POSITION.y;
+	bird.body.velocity.y = 0;
+}
+
+function flap() {
+	bird.body.velocity.y = -FLAP_VELOCITY;
 }
 
 new Phaser.Game(config);
